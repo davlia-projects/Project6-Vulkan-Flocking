@@ -43,10 +43,6 @@ layout (binding = 2) uniform UBO
 
 void main()
 {
-		// LOOK: This is very similar to a CUDA kernel.
-		// Right now, the compute shader only advects the particles with their
-		// velocity and handles wrap-around.
-		// TODO: implement flocking behavior.
 
     // Current SSBO index
     uint index = gl_GlobalInvocationID.x;
@@ -55,20 +51,49 @@ void main()
 		return;
 
     // Read position and velocity
-		vec2 vPos = particlesA[index].pos.xy;
+	vec2 vPos = particlesA[index].pos.xy;
     vec2 vVel = particlesA[index].vel.xy;
+	vec2 center = vec2(0.0, 0.0);
+	vec2 separate = vec2(0.0, 0.0);
+	vec2 cohesion = vec2(0.0, 0.0);
+	vec2 newVel = vec2(0.0, 0.0);
+	int neighborCount = 0;
+	for (int i = 0; i < ubo.particleCount; i++) {
+		if (i == index) {
+			continue;
+		}
 
-		// clamp velocity for a more pleasing simulation.
-		vVel = normalize(vVel) * clamp(length(vVel), 0.0, 0.1);
+		float distance = distance(vPos, particlesA[i].pos);
+		if (distance < ubo.rule1Distance) {
+			center += particlesA[i].pos;
+			neighborCount++;
+		}
+		if (distance < ubo.rule2Distance) {
+			separate -= particlesA[i].pos - vPos;
+		}
+		if (distance < ubo.rule3Distance) {
+			cohesion += particlesA[i].vel;
+		}
+	}
+	if (neighborCount > 0) {
+		center /= neighborCount;
+		newVel += (center - vPos) * ubo.rule1Scale;
+	}
+	newVel += separate * ubo.rule2Scale;
+	newVel += cohesion * ubo.rule3Scale;
 
-		// kinematic update
-		vPos += vVel * ubo.deltaT;
+	vVel += newVel;
+	// clamp velocity for a more pleasing simulation.
+	vVel = normalize(vVel) * clamp(length(vVel), 0.0, 0.1);
+
+	// kinematic update
+	vPos += vVel * ubo.deltaT;
 
     // Wrap around boundary
-		if (vPos.x < -1.0) vPos.x = 1.0;
-		if (vPos.x > 1.0) vPos.x = -1.0;
-		if (vPos.y < -1.0) vPos.y = 1.0;
-		if (vPos.y > 1.0) vPos.y = -1.0;
+	if (vPos.x < -1.0) vPos.x = 1.0;
+	if (vPos.x > 1.0) vPos.x = -1.0;
+	if (vPos.y < -1.0) vPos.y = 1.0;
+	if (vPos.y > 1.0) vPos.y = -1.0;
 
     particlesB[index].pos.xy = vPos;
 
