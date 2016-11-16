@@ -6,6 +6,8 @@ Vulkan Flocking: compute and shading in one pipeline!
 * David Liao
   Windows 7, i7-4770 @ 3.40GHz 16GB, NVIDIA Quadro K600 4GB (SIGLAB)
 
+![](demo.gif)
+
 - Why do you think Vulkan expects explicit descriptors for things like generating pipelines and commands? HINT: this may relate to something in the comments about some components using pre-allocated GPU memory.
 
 Vulkan uses a memory pool that's preallocated and thus requires the developer to provide explicit descriptors to manage memory distribution.
