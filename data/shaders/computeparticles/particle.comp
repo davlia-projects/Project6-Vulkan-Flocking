@@ -41,6 +41,42 @@ layout (binding = 2) uniform UBO
 	int particleCount;
 } ubo;
 
+vec2 computeVelocity(uint index) {
+	vec2 center = vec2(0.0f, 0.0f);
+	vec2 separate = vec2(0.0f, 0.0f);
+	vec2 cohesion = vec2(0.0f, 0.0f);
+	vec2 tVel = vec2(0.0f, 0.0f);
+	int neighborCount = 0;
+	int test = 0;
+	for (int i = 0; i < ubo.particleCount; i++) {
+		if (i == index) {
+			continue;
+		}
+
+		float distance = distance(particlesA[index].pos, particlesA[i].pos);
+		if (distance < ubo.rule1Distance) {
+			center += particlesA[i].pos;
+			neighborCount++;
+		}
+		if (distance < ubo.rule2Distance) {
+			separate += particlesA[index].pos - particlesA[i].pos;
+		}
+		if (distance < ubo.rule3Distance) {
+			cohesion += particlesA[i].vel;
+			test++;
+		}
+	}
+	if (neighborCount > 0) {
+		center /= neighborCount;
+		tVel += (center - particlesA[index].pos) * ubo.rule1Scale;
+	}
+	tVel += separate * ubo.rule2Scale;
+	if (test > 0) {
+		tVel += cohesion * ubo.rule3Scale;
+	}
+	return tVel;
+}
+
 void main()
 {
 
@@ -50,39 +86,10 @@ void main()
     if (index >= ubo.particleCount)
 		return;
 
-    // Read position and velocity
-	vec2 vPos = particlesA[index].pos.xy;
     vec2 vVel = particlesA[index].vel.xy;
-	vec2 center = vec2(0.0, 0.0);
-	vec2 separate = vec2(0.0, 0.0);
-	vec2 cohesion = vec2(0.0, 0.0);
-	vec2 newVel = vec2(0.0, 0.0);
-	int neighborCount = 0;
-	for (int i = 0; i < ubo.particleCount; i++) {
-		if (i == index) {
-			continue;
-		}
+	vec2 vPos = particlesA[index].pos.xy;
 
-		float distance = distance(vPos, particlesA[i].pos);
-		if (distance < ubo.rule1Distance) {
-			center += particlesA[i].pos;
-			neighborCount++;
-		}
-		if (distance < ubo.rule2Distance) {
-			separate -= particlesA[i].pos - vPos;
-		}
-		if (distance < ubo.rule3Distance) {
-			cohesion += particlesA[i].vel;
-		}
-	}
-	if (neighborCount > 0) {
-		center /= neighborCount;
-		newVel += (center - vPos) * ubo.rule1Scale;
-	}
-	newVel += separate * ubo.rule2Scale;
-	newVel += cohesion * ubo.rule3Scale;
-
-	vVel += newVel;
+	vVel = computeVelocity(index);
 	// clamp velocity for a more pleasing simulation.
 	vVel = normalize(vVel) * clamp(length(vVel), 0.0, 0.1);
 

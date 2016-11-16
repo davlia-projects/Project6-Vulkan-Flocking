@@ -36,9 +36,9 @@
 #define RULE1DISTANCE 0.1f // cohesion
 #define RULE2DISTANCE 0.05f // separation
 #define RULE3DISTANCE 0.05f // alignment
-#define RULE1SCALE 0.02f
-#define RULE2SCALE 0.05f
-#define RULE3SCALE 0.01f
+#define RULE1SCALE 0.01f
+#define RULE2SCALE 0.02f
+#define RULE3SCALE 0.4f
 
 class VulkanExample : public VulkanExampleBase
 {
@@ -543,12 +543,6 @@ public:
 			2,
 			&compute.uniformBuffer.descriptor),
 
-
-			// TODO: write the second descriptorSet, using the top for reference.
-			// We want the descriptorSets to be used for flip-flopping:
-			// on one frame, we use one descriptorSet with the compute pass,
-			// on the next frame, we use the other.
-			// What has to be different about how the second descriptorSet is written here?
 			vkTools::initializers::writeDescriptorSet(
 			compute.descriptorSets[1], // LOOK: which descriptor set to write to?
 			VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
